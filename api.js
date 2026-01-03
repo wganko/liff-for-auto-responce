@@ -43,6 +43,9 @@ function onFormSubmit(e) {
  */
 function processAttendanceResponse(e, config) {
   var namedValues = e.namedValues;
+  var range = e.range;
+  var sheet = range.getSheet();
+  var row = range.getRow();
 
   console.log('NamedValues:', JSON.stringify(namedValues));
 
@@ -59,6 +62,9 @@ function processAttendanceResponse(e, config) {
   var userInfo = syncBambooUser(userId, bambooNoFromForm, userName);
 
   if (userInfo && userInfo.bambooNo !== '未登録') {
+    // 【追加】回答シートのE列（5列目）に竹号を書き込む
+    sheet.getRange(row, 5).setValue(userInfo.bambooNo);
+
     var replyText = CONFIG.REPLY_MESSAGE_TEMPLATE
       .replace('{bambooNo}', userInfo.bambooNo)
       .replace('{status}', attendanceStatus);
@@ -67,6 +73,8 @@ function processAttendanceResponse(e, config) {
     sendLineMessage(userId, replyText);
   } else {
     console.warn('UserInfo match failed or Bamboo No is not registered for: ' + userName);
+    // 竹号が特定できなかった場合もE列に「未登録」と記録
+    sheet.getRange(row, 5).setValue('未登録');
   }
 }
 
