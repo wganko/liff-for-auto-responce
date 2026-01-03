@@ -103,7 +103,9 @@ function syncBambooUser(userId, bambooNo, lineName) {
   if (bambooNo) {
     for (var i = 1; i < data.length; i++) {
       if (String(data[i][col.BAMBOO_NO]) === String(bambooNo)) {
+        // User IDとタイムスタンプを記録
         sheet.getRange(i + 1, col.USER_ID + 1).setValue(userId);
+        sheet.getRange(i + 1, 1).setValue(new Date()); // A列にタイムスタンプ
         return {
           userId: userId,
           bambooNo: data[i][col.BAMBOO_NO],
@@ -117,7 +119,9 @@ function syncBambooUser(userId, bambooNo, lineName) {
   if (lineName) {
     for (var i = 1; i < data.length; i++) {
       if (data[i][col.NAME] === lineName) {
+        // User IDとタイムスタンプを記録
         sheet.getRange(i + 1, col.USER_ID + 1).setValue(userId);
+        sheet.getRange(i + 1, 1).setValue(new Date()); // A列にタイムスタンプ
         return {
           userId: userId,
           bambooNo: data[i][col.BAMBOO_NO],
