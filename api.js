@@ -44,7 +44,6 @@ function onFormSubmit(e) {
 function processAttendanceResponse(e, config) {
   var namedValues = e.namedValues;
 
-  // ログ出力（デバッグ用：Apps Scriptの「実行数」から確認可能）
   console.log('NamedValues:', JSON.stringify(namedValues));
 
   var userId = namedValues[config.COLUMNS.USER_ID] ? namedValues[config.COLUMNS.USER_ID][0] : null;
@@ -57,10 +56,6 @@ function processAttendanceResponse(e, config) {
     return;
   }
 
-  // 竹号リストとの照合
-  // 1. User ID で検索
-  // 2. なければ竹号で検索（初回のみ）
-  // 3. なければLINE名で検索（バックアップ）
   var userInfo = syncBambooUser(userId, bambooNoFromForm, userName);
 
   if (userInfo && userInfo.bambooNo !== '未登録') {
@@ -72,7 +67,6 @@ function processAttendanceResponse(e, config) {
     sendLineMessage(userId, replyText);
   } else {
     console.warn('UserInfo match failed or Bamboo No is not registered for: ' + userName);
-    // 照合失敗時もログを頼りに特定できるようにする
   }
 }
 
@@ -86,7 +80,7 @@ function syncBambooUser(userId, bambooNo, lineName) {
 
   var col = CONFIG.BAMBOO_COL;
 
-  // 1. User ID で最速検索（既に紐付け済みの人）
+  // 1. User ID で最速検索
   for (var i = 1; i < data.length; i++) {
     if (data[i][col.USER_ID] === userId) {
       return {
@@ -97,7 +91,7 @@ function syncBambooUser(userId, bambooNo, lineName) {
     }
   }
 
-  // 2. User ID で見つからない場合、竹号で検索（初回回答時）
+  // 2. 竹号で検索
   if (bambooNo) {
     for (var i = 1; i < data.length; i++) {
       if (String(data[i][col.BAMBOO_NO]) === String(bambooNo)) {
@@ -111,7 +105,7 @@ function syncBambooUser(userId, bambooNo, lineName) {
     }
   }
 
-  // 3. User ID も竹号も見つからない場合、LINE名で検索（念のため）
+  // 3. LINE名で検索
   if (lineName) {
     for (var i = 1; i < data.length; i++) {
       if (data[i][col.NAME] === lineName) {
@@ -150,4 +144,36 @@ function sendLineMessage(userId, text) {
 
   var res = UrlFetchApp.fetch(url, options);
   console.log('LINE API Response:', res.getContentText());
+}
+
+/**
+ * トリガーをプログラムで作成する関数
+ * 【重要】この関数をGASエディタで一度だけ手動実行してください。
+ * 実行すると、CONFIG.FORMS に登録されたすべてのスプレッドシートに対して
+ * 「フォーム送信時」トリガーが自動的に作成されます。
+ */
+function setupTriggers() {
+  // 既存のトリガーをすべて削除（重複防止）
+  var triggers = ScriptApp.getProjectTriggers();
+  triggers.forEach(function (trigger) {
+    if (trigger.getHandlerFunction() === 'onFormSubmit') {
+      ScriptApp.deleteTrigger(trigger);
+    }
+  });
+
+  // CONFIG.FORMS の各スプレッドシートに対してトリガーを作成
+  CONFIG.FORMS.forEach(function (formConfig) {
+    try {
+      var ss = SpreadsheetApp.openById(formConfig.RESPONSE_SHEET_ID);
+      ScriptApp.newTrigger('onFormSubmit')
+        .forSpreadsheet(ss)
+        .onFormSubmit()
+        .create();
+      console.log('Trigger created for: ' + formConfig.NAME);
+    } catch (e) {
+      console.error('Failed to create trigger for ' + formConfig.NAME + ': ' + e.message);
+    }
+  });
+
+  console.log('Trigger setup completed!');
 }
