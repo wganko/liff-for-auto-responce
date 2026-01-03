@@ -23,8 +23,8 @@ var CONFIG = {
             COLUMNS: {
                 USER_ID: 'LINE User ID',
                 BAMBOO_NO: '竹号',
-                NAME: '氏名',
-                STATUS: '出欠'
+                NAME: 'LINE名', // ここを「LINE名」に修正（画像のヘッダーに合わせました）
+                STATUS: '出欠回答' // ここを「出欠回答」に修正（画像のヘッダーに合わせました）
             }
         },
         {
@@ -34,8 +34,8 @@ var CONFIG = {
             COLUMNS: {
                 USER_ID: 'LINE User ID',
                 BAMBOO_NO: '竹号',
-                NAME: '氏名',
-                STATUS: '出欠'
+                NAME: 'LINE名',
+                STATUS: '出欠回答'
             }
         }
     ],

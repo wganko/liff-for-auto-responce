@@ -56,11 +56,13 @@
         const FORM_CONFIGS = {
             '1': {
                 url: 'https://docs.google.com/forms/d/e/1FAIpQLSdtbD3DYky18BwRA-UzLycw674G4svRtR8r1BpbnFkUIaNeng/viewform',
-                userIdEntry: 'entry.1410709912'
+                userIdEntry: 'entry.1410709912',
+                userNameEntry: 'entry.103986701' // 「LINE名」の項目IDを追加
             },
             '2': {
-                url: 'https://docs.google.com/forms/d/e/DUMMY_FORM_ID/viewform', // 2つ目のフォームURL
-                userIdEntry: 'entry.DUMMY_ENTRY_ID' // 2つ目のフォームのUserID項目ID
+                url: 'https://docs.google.com/forms/d/e/DUMMY_FORM_ID/viewform',
+                userIdEntry: 'entry.DUMMY_ID',
+                userNameEntry: 'entry.DUMMY_NAME'
             }
         };
         // ▲▲ 設定項目 ▲▲
@@ -75,18 +77,20 @@
 
                 const profile = await liff.getProfile();
                 const userId = profile.userId;
+                const displayName = profile.displayName; // LINE名を取得
 
-                // URLのパラメータから 'f' を取得 (例: ?f=1)
                 const urlParams = new URLSearchParams(window.location.search);
-                const formKey = urlParams.get('f') || '1'; // 指定がなければ 1
+                const formKey = urlParams.get('f') || '1';
                 const config = FORM_CONFIGS[formKey];
 
                 if (!config) throw new Error('フォーム設定が見つかりません');
 
-                // 転送先URLの構築
-                const redirectUrl = `${config.url}?${config.userIdEntry}=${encodeURIComponent(userId)}`;
+                // 転送先URLの構築：UserIDとUserName(LINE名)をプレフィルする
+                let redirectUrl = `${config.url}?${config.userIdEntry}=${encodeURIComponent(userId)}`;
+                if (config.userNameEntry) {
+                    redirectUrl += `&${config.userNameEntry}=${encodeURIComponent(displayName)}`;
+                }
 
-                // フォームへリダイレクト
                 window.location.replace(redirectUrl);
 
             } catch (err) {
