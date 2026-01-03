@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>出欠確認フォームへ移動中</title>
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f7f6;
+        }
+
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 2s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .container {
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="loader"></div>
+        <p>フォームへ移動しています...</p>
+    </div>
+    <script>
+        // ▼▼ 設定項目 ▼▼
+        const LIFF_ID = 'YOUR_LIFF_ID'; // LINE Developersで発行したLIFF ID
+        // GoogleフォームのURL（「事前入力したURLを取得」で生成されるURLの ? の前まで）
+        const FORM_BASE_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSdtbD3DYky18BwRA-UzLycw674G4svRtR8r1BpbnFkUIaNeng/viewform';
+
+        // フォーム項目のEntry ID（事前入力URLから確認してください）
+        const ENTRY_IDS = {
+            userId: 'entry.1410709912', // LINE User IDの項目IDに書き換えてください
+        };
+        // ▲▲ 設定項目 ▲▲
+
+        async function main() {
+            try {
+                await liff.init({ liffId: LIFF_ID });
+                if (!liff.isLoggedIn()) {
+                    liff.login();
+                    return;
+                }
+
+                const profile = await liff.getProfile();
+                const userId = profile.userId;
+
+                // URLパラメータを構築
+                const params = new URLSearchParams();
+                params.append(ENTRY_IDS.userId, userId);
+
+                // フォームへリダイレクト
+                window.location.replace(`${FORM_BASE_URL}?${params.toString()}`);
+
+            } catch (err) {
+                document.body.innerHTML = '<p>エラーが発生しました: ' + err.message + '</p>';
+            }
+        }
+
+        main();
+    </script>
+</body>
+
+</html>
