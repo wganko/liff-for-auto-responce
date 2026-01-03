@@ -42,8 +42,8 @@ var CONFIG = {
 
     // 竹号リストシートの列配置（0始まり）
     BAMBOO_COL: {
-        USER_ID: 0,   // A列: User ID
-        BAMBOO_NO: 1, // B列: 竹号
-        NAME: 2       // C列: LINE名
+        USER_ID: 1,   // B列: # user id
+        NAME: 2,      // C列: LINE名
+        BAMBOO_NO: 3  // D列: 竹号
     }
 };
