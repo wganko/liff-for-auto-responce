@@ -1,103 +1,359 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>出欠確認フォームへ移動中</title>
+    <title>出欠確認</title>
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f4f7f6;
+            padding: 20px;
         }
 
-        .loader {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3498db;
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #e0e0e0;
+            border-top-color: #667eea;
             border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 2s linear infinite;
-            margin-bottom: 20px;
+            animation: spin 1s linear infinite;
         }
 
         @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
+            to {
                 transform: rotate(360deg);
             }
         }
 
-        .container {
-            text-align: center;
+        .form-container {
+            display: none;
+        }
+
+        .icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        h2 {
+            color: #333;
+            font-size: 22px;
+            margin-bottom: 25px;
+        }
+
+        .info-box {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+            text-align: left;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: #6c757d;
+            font-size: 14px;
+        }
+
+        .info-value {
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 18px 20px;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-attend {
+            background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 184, 148, 0.4);
+        }
+
+        .btn-attend:hover {
+            box-shadow: 0 6px 20px rgba(0, 184, 148, 0.5);
+        }
+
+        .btn-absent {
+            background: linear-gradient(135deg, #e17055 0%, #d63031 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(214, 48, 49, 0.4);
+        }
+
+        .btn-absent:hover {
+            box-shadow: 0 6px 20px rgba(214, 48, 49, 0.5);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .result {
+            display: none;
+        }
+
+        .result-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .result-message {
+            color: #333;
+            font-size: 18px;
+            line-height: 1.6;
+        }
+
+        .error-message {
+            background: #fff3f3;
+            border: 1px solid #ffcccc;
+            border-radius: 10px;
+            padding: 15px;
+            color: #d63031;
+            margin-top: 20px;
+            display: none;
         }
     </style>
 </head>
 
 <body>
     <div class="container">
-        <div class="loader"></div>
-        <p>フォームへ移動しています...</p>
-    </div>
-    <script>
-        // ▼▼ 設定項目 ▼▼
-        const LIFF_ID = '2008812600-CGxsnhbC';
+        <!-- ローディング画面 -->
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>読み込み中...</p>
+        </div>
 
-        // フォームごとの設定
+        <!-- フォーム画面 -->
+        <div id="form-container" class="form-container">
+            <div class="icon">📋</div>
+            <h2>出欠確認</h2>
+
+            <div class="info-box">
+                <div class="info-row">
+                    <span class="info-label">会議名</span>
+                    <span class="info-value" id="event-title">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">日付</span>
+                    <span class="info-value" id="event-date">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">回答者</span>
+                    <span class="info-value" id="user-name">-</span>
+                </div>
+            </div>
+
+            <div class="buttons">
+                <button class="btn btn-attend" onclick="submitAttendance('出席')">出席</button>
+                <button class="btn btn-absent" onclick="submitAttendance('欠席')">欠席</button>
+            </div>
+
+            <div id="error" class="error-message"></div>
+        </div>
+
+        <!-- 完了画面 -->
+        <div id="result" class="result">
+            <div class="result-icon">✅</div>
+            <p class="result-message" id="result-message">回答を送信しました</p>
+        </div>
+    </div>
+
+    <script>
+        // ▼▼ 設定 ▼▼
+        const LIFF_ID = '2008812600-CGxsnhbC';
+        const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbycyHBU1vVd6ALZ9FUk_mBMz9KfJt60W9BKjVkYfzmv0Ca50y_ZLlWHw_QBYxdWMyGK/exec';
+
+        // フォーム設定（Phase 2で外部化予定）
         const FORM_CONFIGS = {
             '1': {
-                url: 'https://docs.google.com/forms/d/e/1FAIpQLSdtbD3DYky18BwRA-UzLycw674G4svRtR8r1BpbnFkUIaNeng/viewform',
-                userIdEntry: 'entry.1410709912',
-                userNameEntry: 'entry.226012430' // 「LINE名」の項目IDを追加
-            },
-            '2': {
-                url: 'https://docs.google.com/forms/d/e/DUMMY_FORM_ID/viewform',
-                userIdEntry: 'entry.DUMMY_ID',
-                userNameEntry: 'entry.DUMMY_NAME'
+                title: '1月度全役員会',
+                date: '2026年1月15日(水)',
+                sheetId: '1E9xMlA_eGWC8Tzt5fciOpAUYxW_qBTuTolH3pSBrVEY'
             }
         };
-        // ▲▲ 設定項目 ▲▲
+        // ▲▲ 設定 ▲▲
+
+        // グローバル変数
+        let userId = '';
+        let userName = '';
+        let eventTitle = '';
+        let eventDate = '';
+        let formKey = '1';
 
         async function main() {
             try {
+                // LIFF初期化
                 await liff.init({ liffId: LIFF_ID });
+                console.log('LIFF initialized');
+
+                // ログインチェック
                 if (!liff.isLoggedIn()) {
                     liff.login();
                     return;
                 }
 
+                // プロファイル取得
                 const profile = await liff.getProfile();
-                const userId = profile.userId;
-                const displayName = profile.displayName; // LINE名を取得
+                userId = profile.userId;
+                userName = profile.displayName;
+                console.log('User:', userName, 'ID:', userId);
 
+                // URLパラメータからフォームキーを取得
                 const urlParams = new URLSearchParams(window.location.search);
-                const formKey = urlParams.get('f') || '1';
+                formKey = urlParams.get('form') || '1';
+
                 const config = FORM_CONFIGS[formKey];
-
-                if (!config) throw new Error('フォーム設定が見つかりません');
-
-                // 転送先URLの構築：UserIDとUserName(LINE名)をプレフィルする
-                let redirectUrl = `${config.url}?${config.userIdEntry}=${encodeURIComponent(userId)}`;
-                if (config.userNameEntry) {
-                    redirectUrl += `&${config.userNameEntry}=${encodeURIComponent(displayName)}`;
+                if (!config) {
+                    throw new Error('フォーム設定が見つかりません: ' + formKey);
                 }
 
-                window.location.replace(redirectUrl);
+                eventTitle = config.title;
+                eventDate = config.date;
+
+                // UIに情報を表示
+                document.getElementById('event-title').textContent = eventTitle;
+                document.getElementById('event-date').textContent = eventDate;
+                document.getElementById('user-name').textContent = userName + ' さん';
+
+                // ローディングを隠してフォームを表示
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('form-container').style.display = 'block';
 
             } catch (err) {
-                document.body.innerHTML = '<p>エラーが発生しました: ' + err.message + '</p>';
+                console.error('Error:', err);
+                showError('初期化エラー: ' + err.message);
             }
         }
 
+        async function submitAttendance(attendance) {
+            const buttons = document.querySelectorAll('.btn');
+            buttons.forEach(btn => btn.disabled = true);
+
+            try {
+                console.log('Submitting:', attendance);
+
+                // 1. liff.sendMessages() で自分のメッセージとして送信
+                const message = `📝 出欠回答を送信しました
+
+会議名: ${eventTitle}
+回答者: ${userName}
+回答: ${attendance}`;
+
+                await liff.sendMessages([{
+                    type: 'text',
+                    text: message
+                }]);
+                console.log('Message sent via liff.sendMessages()');
+
+                // 2. GASにデータを送信してスプレッドシートに記録
+                const response = await fetch(GAS_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'submitAttendance',
+                        userId: userId,
+                        userName: userName,
+                        attendance: attendance,
+                        eventTitle: eventTitle,
+                        eventDate: eventDate,
+                        formKey: formKey
+                    })
+                });
+
+                const result = await response.json();
+                console.log('GAS Response:', result);
+
+                if (!result.success) {
+                    throw new Error(result.message || 'サーバーエラー');
+                }
+
+                // 3. 完了画面を表示
+                document.getElementById('form-container').style.display = 'none';
+                document.getElementById('result').style.display = 'block';
+                document.getElementById('result-message').textContent =
+                    `${userName} さんの回答「${attendance}」を送信しました`;
+
+                // 4. 2秒後に画面を閉じる
+                setTimeout(() => {
+                    liff.closeWindow();
+                }, 2000);
+
+            } catch (err) {
+                console.error('Submit error:', err);
+                showError('送信エラー: ' + err.message);
+                buttons.forEach(btn => btn.disabled = false);
+            }
+        }
+
+        function showError(message) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('form-container').style.display = 'block';
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        // 起動
         main();
     </script>
 </body>
