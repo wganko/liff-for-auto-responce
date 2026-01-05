@@ -229,11 +229,11 @@
                 </div>
             </div>
 
-            <div id="description-box" class="description-box" style="display:none;"></div>
-
             <div class="user-box">
-                回答者: <strong id="user-name">-</strong>
+                <strong id="user-name">-</strong> さまへ
             </div>
+
+            <div id="description-box" class="description-box" style="display:none;"></div>
 
             <div class="buttons" id="buttons-container">
                 <!-- ボタンはJavaScriptで動的に生成 -->
@@ -345,7 +345,7 @@
             }
 
             // ユーザー名
-            document.getElementById('user-name').textContent = userName + ' さん';
+            document.getElementById('user-name').textContent = userName;
 
             // ボタン生成
             const buttonsContainer = document.getElementById('buttons-container');
