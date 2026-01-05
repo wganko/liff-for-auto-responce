@@ -4,41 +4,34 @@
  */
 var CONFIG = {
     // LINE Messaging API チャネルアクセストークン
-    LINE_CHANNEL_ACCESS_TOKEN: 'kC2P/9OVAOceiDGtbCSxcJE6Nku7Y4Bvu4TQDj/G7TAMnpUQG7v9Hv/Kae4Bud4V9Lxsl/byoZgUv0H/A6WoJmwLy6Kpqu2oZDrqPRg9VpEIjEVn3EDioodyd4VHoj8j0+5GLINOsvinGL2ZsWRiEgdB04t89/1O/w1cDnyilFU=',
+    LINE_CHANNEL_ACCESS_TOKEN: 'jMKJmWZAmw6hWsIS8ExU0HqOyRLd4wJPy+zAB1bimRsisq/MDm05jtNne/bYZoRW9Lxsl/byoZgUv0H/A6WoJmwLy6Kpqu2oZDrqPRg9VpFojpENU+EZnjYN2HXPcsyddT6AJd6jQTJilQ0cWlbY/wdB04t89/1O/w1cDnyilFU=',
 
     // 竹号リスト（LINEアカウント竹号登録自動回答用）のスプレッドシートID
     BAMBOO_SHEET_ID: '1flEIyN6b6ZcHhpxI_TGKfXweONdTocmtoki1hT-YS5g',
     BAMBOO_SHEET_NAME: 'シート1',
 
-    // メッセージテンプレート
-    // {bambooNo} と {status} はプログラム内で置換されます
-    REPLY_MESSAGE_TEMPLATE: '{bambooNo}さん、ご回答ありがとうございます。\n回答内容は、”{status}”です。',
+    // フォーム設定マスタースプレッドシート
+    FORM_CONFIG_SHEET_ID: '1dTrPV3uXEk2y-sjffMNYBst8vsic7pRLAsxheLA15ps',
+    FORM_CONFIG_SHEET_NAME: 'シート1',
 
-    // 管理対象のフォーム設定
-    FORMS: [
-        {
-            NAME: '全役員会出欠連絡',
-            RESPONSE_SHEET_ID: '1E9xMlA_eGWC8Tzt5fciOpAUYxW_qBTuTolH3pSBrVEY',
-            RESPONSE_SHEET_NAME: 'フォームの回答 1',
-            COLUMNS: {
-                USER_ID: 'LINE User ID',
-                BAMBOO_NO: '竹号',
-                NAME: 'LINE名', // ここを「LINE名」に修正（画像のヘッダーに合わせました）
-                STATUS: '出欠回答' // ここを「出欠回答」に修正（画像のヘッダーに合わせました）
-            }
-        },
-        {
-            NAME: '2つ目のフォーム (仮)',
-            RESPONSE_SHEET_ID: 'DUMMY_SHEET_ID_2',
-            RESPONSE_SHEET_NAME: 'フォームの回答 1',
-            COLUMNS: {
-                USER_ID: 'LINE User ID',
-                BAMBOO_NO: '竹号',
-                NAME: 'LINE名',
-                STATUS: '出欠回答'
-            }
-        }
-    ],
+    // 回答記録スプレッドシート（複数シートで管理）
+    RESPONSE_SHEET_ID: '1Fi-Kf8yBFQlfKYSI2ul1T8HGLhXuYIGOsOQp6Es-DM4',
+
+    // フォーム設定マスターの列配置（0始まり）
+    FORM_CONFIG_COL: {
+        FORM_ID: 0,          // A列: フォームID
+        TITLE: 1,            // B列: 会議名
+        DATE: 2,             // C列: 日付
+        TIME: 3,             // D列: 時間
+        LOCATION: 4,         // E列: 場所
+        LOCATION_URL: 5,     // F列: 場所URL
+        DESCRIPTION: 6,      // G列: 説明文
+        QUESTION_LABEL: 7,   // H列: 質問ラベル（出欠など）
+        OPTION1: 8,          // I列: 選択肢1
+        OPTION2: 9,          // J列: 選択肢2
+        RESPONSE_SHEET_NAME: 10,  // K列: 回答記録シート名
+        ACTIVE: 11           // L列: 有効フラグ
+    },
 
     // 竹号リストシートの列配置（0始まり）
     BAMBOO_COL: {

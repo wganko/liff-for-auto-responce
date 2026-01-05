@@ -67,20 +67,21 @@
         h2 {
             color: #333;
             font-size: 22px;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
         }
 
         .info-box {
             background: #f8f9fa;
             border-radius: 12px;
             padding: 20px;
-            margin-bottom: 25px;
+            margin-bottom: 15px;
             text-align: left;
         }
 
         .info-row {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             padding: 8px 0;
             border-bottom: 1px solid #e9ecef;
         }
@@ -92,12 +93,43 @@
         .info-label {
             color: #6c757d;
             font-size: 14px;
+            flex-shrink: 0;
         }
 
         .info-value {
             color: #333;
             font-weight: 600;
             font-size: 14px;
+            text-align: right;
+        }
+
+        .info-value a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .info-value a:hover {
+            text-decoration: underline;
+        }
+
+        .description-box {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: left;
+            font-size: 14px;
+            color: #856404;
+        }
+
+        .user-box {
+            background: #e8f5e9;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 20px;
+            font-size: 15px;
+            color: #2e7d32;
         }
 
         .buttons {
@@ -121,23 +153,23 @@
             transform: scale(0.98);
         }
 
-        .btn-attend {
+        .btn-option1 {
             background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
             color: white;
             box-shadow: 0 4px 15px rgba(0, 184, 148, 0.4);
         }
 
-        .btn-attend:hover {
+        .btn-option1:hover {
             box-shadow: 0 6px 20px rgba(0, 184, 148, 0.5);
         }
 
-        .btn-absent {
+        .btn-option2 {
             background: linear-gradient(135deg, #e17055 0%, #d63031 100%);
             color: white;
             box-shadow: 0 4px 15px rgba(214, 48, 49, 0.4);
         }
 
-        .btn-absent:hover {
+        .btn-option2:hover {
             box-shadow: 0 6px 20px rgba(214, 48, 49, 0.5);
         }
 
@@ -184,26 +216,27 @@
         <!-- フォーム画面 -->
         <div id="form-container" class="form-container">
             <div class="icon">📋</div>
-            <h2>出欠確認</h2>
+            <h2 id="form-title">出欠確認</h2>
 
             <div class="info-box">
                 <div class="info-row">
-                    <span class="info-label">会議名</span>
-                    <span class="info-value" id="event-title">-</span>
+                    <span class="info-label">📅 日時</span>
+                    <span class="info-value" id="event-datetime">-</span>
                 </div>
-                <div class="info-row">
-                    <span class="info-label">日付</span>
-                    <span class="info-value" id="event-date">-</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">回答者</span>
-                    <span class="info-value" id="user-name">-</span>
+                <div class="info-row" id="location-row">
+                    <span class="info-label">📍 場所</span>
+                    <span class="info-value" id="event-location">-</span>
                 </div>
             </div>
 
-            <div class="buttons">
-                <button class="btn btn-attend" onclick="submitAttendance('出席')">出席</button>
-                <button class="btn btn-absent" onclick="submitAttendance('欠席')">欠席</button>
+            <div id="description-box" class="description-box" style="display:none;"></div>
+
+            <div class="user-box">
+                回答者: <strong id="user-name">-</strong>
+            </div>
+
+            <div class="buttons" id="buttons-container">
+                <!-- ボタンはJavaScriptで動的に生成 -->
             </div>
 
             <div id="error" class="error-message"></div>
@@ -220,22 +253,12 @@
         // ▼▼ 設定 ▼▼
         const LIFF_ID = '2008812600-CGxsnhbC';
         const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbycyHBU1vVd6ALZ9FUk_mBMz9KfJt60W9BKjVkYfzmv0Ca50y_ZLlWHw_QBYxdWMyGK/exec';
-
-        // フォーム設定（Phase 2で外部化予定）
-        const FORM_CONFIGS = {
-            '1': {
-                title: '1月度全役員会',
-                date: '2026年1月15日(水)',
-                sheetId: '1E9xMlA_eGWC8Tzt5fciOpAUYxW_qBTuTolH3pSBrVEY'
-            }
-        };
         // ▲▲ 設定 ▲▲
 
         // グローバル変数
         let userId = '';
         let userName = '';
-        let eventTitle = '';
-        let eventDate = '';
+        let formConfig = null;
         let formKey = '1';
 
         async function main() {
@@ -260,18 +283,22 @@
                 const urlParams = new URLSearchParams(window.location.search);
                 formKey = urlParams.get('form') || '1';
 
-                const config = FORM_CONFIGS[formKey];
-                if (!config) {
-                    throw new Error('フォーム設定が見つかりません: ' + formKey);
+                // GASからフォーム設定を取得
+                const configResponse = await fetch(
+                    `${GAS_ENDPOINT}?action=getFormConfig&formId=${formKey}`,
+                    { method: 'GET', mode: 'cors' }
+                );
+                const configResult = await configResponse.json();
+                console.log('Config Result:', configResult);
+
+                if (!configResult.success || !configResult.config) {
+                    throw new Error(configResult.message || 'フォーム設定が見つかりません');
                 }
 
-                eventTitle = config.title;
-                eventDate = config.date;
+                formConfig = configResult.config;
 
                 // UIに情報を表示
-                document.getElementById('event-title').textContent = eventTitle;
-                document.getElementById('event-date').textContent = eventDate;
-                document.getElementById('user-name').textContent = userName + ' さん';
+                renderForm();
 
                 // ローディングを隠してフォームを表示
                 document.getElementById('loading').style.display = 'none';
@@ -283,6 +310,54 @@
             }
         }
 
+        function renderForm() {
+            // タイトル
+            document.getElementById('form-title').textContent = formConfig.title || '出欠確認';
+
+            // 日時
+            let datetime = formConfig.date || '';
+            if (formConfig.time) {
+                datetime += ' ' + formConfig.time;
+            }
+            document.getElementById('event-datetime').textContent = datetime || '-';
+
+            // 場所
+            const locationRow = document.getElementById('location-row');
+            const locationEl = document.getElementById('event-location');
+            if (formConfig.location) {
+                if (formConfig.locationUrl) {
+                    locationEl.innerHTML = `<a href="${formConfig.locationUrl}" target="_blank">${formConfig.location} 🔗</a>`;
+                } else {
+                    locationEl.textContent = formConfig.location;
+                }
+                locationRow.style.display = 'flex';
+            } else {
+                locationRow.style.display = 'none';
+            }
+
+            // 説明文
+            const descBox = document.getElementById('description-box');
+            if (formConfig.description) {
+                descBox.textContent = formConfig.description;
+                descBox.style.display = 'block';
+            } else {
+                descBox.style.display = 'none';
+            }
+
+            // ユーザー名
+            document.getElementById('user-name').textContent = userName + ' さん';
+
+            // ボタン生成
+            const buttonsContainer = document.getElementById('buttons-container');
+            const option1 = formConfig.option1 || '出席';
+            const option2 = formConfig.option2 || '欠席';
+
+            buttonsContainer.innerHTML = `
+                <button class="btn btn-option1" onclick="submitAttendance('${option1}')">${option1}</button>
+                <button class="btn btn-option2" onclick="submitAttendance('${option2}')">${option2}</button>
+            `;
+        }
+
         async function submitAttendance(attendance) {
             const buttons = document.querySelectorAll('.btn');
             buttons.forEach(btn => btn.disabled = true);
@@ -291,11 +366,12 @@
                 console.log('Submitting:', attendance);
 
                 // 1. liff.sendMessages() で自分のメッセージとして送信
-                const message = `📝 出欠回答を送信しました
-
-会議名: ${eventTitle}
-回答者: ${userName}
-回答: ${attendance}`;
+                let message = `📝 ${formConfig.questionLabel || '出欠'}回答を送信しました\n\n`;
+                message += `会議名: ${formConfig.title}\n`;
+                if (formConfig.date) message += `日時: ${formConfig.date}${formConfig.time ? ' ' + formConfig.time : ''}\n`;
+                if (formConfig.location) message += `場所: ${formConfig.location}\n`;
+                message += `回答者: ${userName}\n`;
+                message += `回答: ${attendance}`;
 
                 await liff.sendMessages([{
                     type: 'text',
@@ -304,14 +380,11 @@
                 console.log('Message sent via liff.sendMessages()');
 
                 // 2. GASにデータを送信してスプレッドシートに記録
-                // GASはリダイレクトを返すため、URLパラメータ形式で送信
                 const params = new URLSearchParams({
                     action: 'submitAttendance',
                     userId: userId,
                     userName: userName,
                     attendance: attendance,
-                    eventTitle: eventTitle,
-                    eventDate: eventDate,
                     formKey: formKey
                 });
 
