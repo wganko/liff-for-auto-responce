@@ -380,3 +380,110 @@ function setupTriggers() {
 **推奨**: 現状では**エルメッセージフォーム3枠を効果的に使いまわす**運用が最も現実的です。
 
 このドキュメントを保存しておくことで、同じ問題に再び遭遇した際に迅速に対応できます。
+
+---
+
+## 🆕 2026年1月アップデート: liff.sendMessages()による新実装
+
+### 背景と解決策
+
+**課題**: Push APIでの自動返信には友だち追加が必須になった
+
+**解決策**: `liff.sendMessages()` を使用して**ユーザー自身のメッセージとして**回答内容を送信する方式に変更
+
+### 新アーキテクチャ
+
+```mermaid
+graph TB
+    A[エルメッセージ] -->|案内+LIFFリンク配信| B[公式アカウント 1:1チャット]
+    B -->|ユーザーがタップ| C[LIFF HTML フォーム]
+    C -->|LIFF SDK| D[User ID, LINE名 自動取得]
+    D -->|フォーム表示| E[出席/欠席 選択]
+    E -->|送信| F[liff.sendMessages]
+    F -->|自分のメッセージとして| B
+    E -->|同時に| G[GAS経由でスプレッドシート記録]
+    
+    style F fill:#00B900,color:#fff
+```
+
+### 主な変更点
+
+| 項目 | 旧方式 | 新方式 |
+|------|--------|--------|
+| 返信メッセージ | ボットからPush API | ユーザー自身がsendMessages |
+| 友だち追加 | 必須 | **不要** ✅ |
+| フォーム | Google Forms | **HTML内フォーム** |
+| 設定管理 | コード内ハードコード | **スプレッドシート** |
+
+### 新しいファイル構成
+
+```
+SyukketsuKakunin/
+├── index.html    # LIFF HTMLフォーム（動的に設定読込）
+├── api.js        # getFormConfig(), handleLiffFormSubmission()
+├── main.js       # doGet/doPost APIエントリーポイント
+├── config.js     # スプレッドシートID、列配置定義
+
+スプレッドシート:
+├── 出欠確認設定マスター  # フォーム設定（GUI編集可能）
+│   └── 列: form_id, title, date, time, location, location_url, 
+│          description, question_label, option1, option2, 
+│          response_sheet_name, active
+├── 竹号マスター          # LINEユーザー→竹号照合用
+└── 回答記録シート        # 全役員会/常任幹事会（シート別に記録）
+    └── 列: タイムスタンプ, 竹号, LINE名, 出欠回答, LINE User ID
+```
+
+### 運用手順
+
+1. **設定マスタースプレッドシート**でタイトル・日付・場所を編集
+2. **エルメッセージ**で以下のURLを配信：
+   - 全役員会: `https://liff.line.me/2008812600-CGxsnhbC?form=2`
+   - 常任幹事会: `https://liff.line.me/2008812600-CGxsnhbC?form=1`
+3. ユーザーが回答すると：
+   - 自分のメッセージとして回答内容が表示される
+   - スプレッドシートに自動記録（竹号も自動照合）
+
+### フォーム表示イメージ
+
+```
+┌─────────────────────────────┐
+│      📋 常任幹事会のご案内   │
+├─────────────────────────────┤
+│ 📅 日時: 令和8年1月30日 15:00│
+│ 📍 場所: ふらっと仏生山 🔗   │
+├─────────────────────────────┤
+│   wganko さまへ             │
+├─────────────────────────────┤
+│ お忙しいところ恐れ入ります  │
+│ が、ご出席をお願いいたし... │
+└─────────────────────────────┘
+│  ┌─────────┐ ┌─────────┐   │
+│  │  出 席  │ │  欠 席  │   │
+│  └─────────┘ └─────────┘   │
+└─────────────────────────────┘
+```
+
+### 重要なURL・ID
+
+| 項目 | 値 |
+|------|-----|
+| LIFF ID | `2008812600-CGxsnhbC` |
+| LIFF URL | `https://liff.line.me/2008812600-CGxsnhbC` |
+| GitHub Pages | `https://wganko.github.io/liff-for-auto-responce/` |
+| GAS Web App | `https://script.google.com/macros/s/AKfycby.../exec` |
+| 設定マスターシート | `1dTrPV3uXEk2y-sjffMNYBst8vsic7pRLAsxheLA15ps` |
+| 回答記録シート | `1Fi-Kf8yBFQlfKYSI2ul1T8HGLhXuYIGOsOQp6Es-DM4` |
+| 竹号マスターシート | `1flEIyN6b6ZcHhpxI_TGKfXweONdTocmtoki1hT-YS5g` |
+
+### 今後の拡張予定
+
+- **質問項目の追加**（弁当要否など）: 必要になったら相談
+- **複雑なフォーム**: エルメッセージで対応
+
+### 結論
+
+> [!TIP]
+> **liff.sendMessages()を使えばボット不要・友だち追加不要で回答確認メッセージを送信できる！**
+> 
+> シンプルな出欠確認はこの方式、複雑なフォームはエルメッセージで使い分けるのがベスト。
