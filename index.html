@@ -304,20 +304,20 @@
                 console.log('Message sent via liff.sendMessages()');
 
                 // 2. GASにデータを送信してスプレッドシートに記録
-                const response = await fetch(GAS_ENDPOINT, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        action: 'submitAttendance',
-                        userId: userId,
-                        userName: userName,
-                        attendance: attendance,
-                        eventTitle: eventTitle,
-                        eventDate: eventDate,
-                        formKey: formKey
-                    })
+                // GASはリダイレクトを返すため、URLパラメータ形式で送信
+                const params = new URLSearchParams({
+                    action: 'submitAttendance',
+                    userId: userId,
+                    userName: userName,
+                    attendance: attendance,
+                    eventTitle: eventTitle,
+                    eventDate: eventDate,
+                    formKey: formKey
+                });
+
+                const response = await fetch(GAS_ENDPOINT + '?' + params.toString(), {
+                    method: 'GET',
+                    mode: 'cors'
                 });
 
                 const result = await response.json();
